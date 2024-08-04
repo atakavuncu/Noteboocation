@@ -1,14 +1,12 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { Provider } from "react-redux";
+import store from "@/redux/store";
+import RootNavigation from "@/navigation/RootNavigation";
 
 export default function App() {
   return (
-    <View style = {{
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center"
-    }}>
-      <Text>Noteboocation</Text>
-    </View>
+    <Provider store={store}>
+      <RootNavigation/>
+    </Provider>
   );
 }
