@@ -24,7 +24,11 @@ export const Colors = {
     tabIconSelected: tintColorDark,
   },
   darkYellow: '#FFA62F',
+  hoverDarkYellow: '#FFA02F',
   lightYellow: '#FFC96F',
   beige: '#FFE8C8',
-  green: '#ACD793'
+  green: '#ACD793',
+  white: '#FFFFFF',
+  black: '#000000',
+  hoverBlack: '#111111'
 };
