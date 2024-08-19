@@ -5,8 +5,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from "react";
 
 
-const InputField = ({ label, value, onChangeText, secureTextEntry = false }: 
-    { label: string, value: string, onChangeText: (text: string) => void, secureTextEntry?: boolean }) => {
+const InputField = ({ label, onChangeText, secureTextEntry = false }: 
+    { label: string, onChangeText: (text: string) => void, secureTextEntry?: boolean }) => {
 
     const [isPasswordVisible, setPasswordVisible] = useState(false);
 
@@ -21,7 +21,6 @@ const InputField = ({ label, value, onChangeText, secureTextEntry = false }:
                 underlineColor="transparent"
                 activeUnderlineColor={Colors.darkYellow}
                 style={styles.textInput}
-                value={value}
                 onChangeText={onChangeText}
                 secureTextEntry = {secureTextEntry ? !isPasswordVisible : false}
             />
