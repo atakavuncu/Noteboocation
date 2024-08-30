@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getAuth, signInWithEmailAndPassword } from "@firebase/auth"
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "@firebase/auth"
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import app from '../config/Firebase';
 
@@ -11,8 +11,6 @@ export const login = createAsyncThunk<LoginResponse, LoginPayload>(
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user: any = userCredential.user
             const token = user.stsTokenManager.accessToken
-            
-            console.log("token: %s", token)
 
             const userData = {
                 token,
@@ -40,6 +38,30 @@ export const autoLogin = createAsyncThunk<string | null>(
             } else {
                 throw new Error("User Not Found");
             }
+        } catch (error) {
+            throw error
+        }
+    }
+)
+
+export const register = createAsyncThunk<LoginResponse, LoginPayload>(
+    'user/register',
+    async ({email, password}) => {
+        try {
+            const auth = getAuth(app)
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+            const user: any = userCredential.user
+            const token = user.stsTokenManager.accessToken
+
+            const userData = {
+                token,
+                user,
+            };
+
+            await AsyncStorage.setItem("userToken", token);
+
+            return userData;
+            
         } catch (error) {
             throw error
         }
@@ -77,7 +99,6 @@ export const userSlice = createSlice({
             .addCase(login.rejected, (state) => {
                 state.isAuth = false
                 state.token = null
-                //Alert.alert("Hata", "E-posta veya parolanız yanlış")
             })
             .addCase(autoLogin.rejected, (state, action) => {
                 state.isAuth = false
@@ -86,6 +107,13 @@ export const userSlice = createSlice({
             .addCase(autoLogin.fulfilled, (state, action) => {
                 state.isAuth = true
                 state.token = action.payload
+            })
+            .addCase(register.rejected, (state, action) => {
+                state.isAuth = false
+            })
+            .addCase(register.fulfilled, (state, action) => {
+                state.isAuth = true
+                state.token = action.payload.token
             })
     }
 })

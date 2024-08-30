@@ -8,17 +8,32 @@ import Spacer, { spacerTypes } from "@/components/Spacer";
 import AuthButton from "@/components/AuthButton";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
-import { setEmail, setPassword, login } from "../../redux/userSlice";
+import { setEmail, setPassword, login, autoLogin } from "../../redux/userSlice";
+import { useEffect, useState } from "react";
+import LoadingScreen from "../LoadingScreen";
 
-export default function LoginScreen() {
+export default function LoginScreen({navigation}: {navigation: any}) {
+    const [loading, setLoading] = useState(true);
     const { email, password } = useSelector((state: RootState) => state.user)
 
     const dispatch = useDispatch<AppDispatch>()
 
+    useEffect(() => {
+        dispatch(autoLogin())
+
+        const timer = setTimeout(() => {
+            setLoading(false);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [])
+
+    if (loading) {
+        return <LoadingScreen />;
+    }
+
     const handleLogin = () => {
         if (email && password) {
-            console.log("Handle Login email: %s", email)
-            console.log("Handle Login password: %s", password)
             dispatch(login({ email, password }));
         } else {
             Alert.alert("Hata", "E-posta ve parola alanları boş bırakılamaz.");
@@ -60,8 +75,7 @@ export default function LoginScreen() {
                     buttonColor={Colors.black}
                     buttonHoverColor={Colors.hoverBlack}
                     buttonTextColor={Colors.white}
-                    onButtonPressed={() => {console.log(password);
-                    }}/>
+                    onButtonPressed={() => {navigation.navigate('signUp')}}/>
             </View>
         </View>
     )
