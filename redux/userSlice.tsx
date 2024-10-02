@@ -1,25 +1,19 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "@firebase/auth"
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "@firebase/auth"
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import app from '../config/Firebase';
 
-export const login = createAsyncThunk<LoginResponse, LoginPayload>(
+export const login = createAsyncThunk<string, LoginPayload>(
     'user/login', 
     async({email, password}) => {
         try {
             const auth = getAuth(app);
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user: any = userCredential.user
-            const token = user.stsTokenManager.accessToken
+            const userId: any = userCredential.user.uid
 
-            const userData = {
-                token,
-                user,
-            };
+            await AsyncStorage.setItem("id", userId);
 
-            await AsyncStorage.setItem("userToken", token);
-
-            return userData;
+            return userId;
 
         } catch (error: any) {
             throw error
@@ -31,36 +25,32 @@ export const autoLogin = createAsyncThunk<string | null>(
     'user/autoLogin', 
     async () => {
         try {
-            const token = await AsyncStorage.getItem("userToken");
+            const userId = await AsyncStorage.getItem("id");
 
-            if (token) {
-                return token;
+            if (userId) {
+                return userId
             } else {
                 throw new Error("User Not Found");
             }
+
+
         } catch (error) {
             throw error
         }
     }
 )
 
-export const register = createAsyncThunk<LoginResponse, LoginPayload>(
+export const register = createAsyncThunk<string, LoginPayload>(
     'user/register',
     async ({email, password}) => {
         try {
             const auth = getAuth(app)
             const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-            const user: any = userCredential.user
-            const token = user.stsTokenManager.accessToken
+            const userId: any = userCredential.user.uid
 
-            const userData = {
-                token,
-                user,
-            };
+            await AsyncStorage.setItem("id", userId);
 
-            await AsyncStorage.setItem("userToken", token);
-
-            return userData;
+            return userId;
             
         } catch (error) {
             throw error
@@ -68,14 +58,42 @@ export const register = createAsyncThunk<LoginResponse, LoginPayload>(
     }
 )
 
+export const logout = createAsyncThunk(
+    'user/logout',
+    async() => {
+        try {
+            const auth = getAuth()
+            await signOut(auth)
+
+            await AsyncStorage.removeItem("id")
+            
+            return null
+        } catch (error) {
+            throw error
+        }
+    }
+)
+
+export const getUserIdFromFirebase = async (): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const auth = getAuth()
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                resolve(user.uid);
+            } else {
+                reject('No user is logged in');
+            }
+        });
+    });
+};
+
 export const userSlice = createSlice({
     name: 'user',
     initialState: {
         email: null,
         password: null,
         isAuth: false,
-        user: null,
-        token: null
+        userId: null
     } as UserState,
     reducers: {
         setEmail: (state, action) => {
@@ -91,29 +109,32 @@ export const userSlice = createSlice({
                 state.isAuth = false
             })
             .addCase(login.fulfilled, (state, action) => {
-                state.user = action.payload.user
-                state.token = action.payload.token
+                state.userId = action.payload
                 state.isAuth = true
                 console.log("Giriş Yapıldı.")
             })
             .addCase(login.rejected, (state) => {
                 state.isAuth = false
-                state.token = null
+                state.userId = null
             })
             .addCase(autoLogin.rejected, (state, action) => {
                 state.isAuth = false
-                state.token = null
+                state.userId = null
             })
             .addCase(autoLogin.fulfilled, (state, action) => {
                 state.isAuth = true
-                state.token = action.payload
+                state.userId = action.payload
             })
             .addCase(register.rejected, (state, action) => {
                 state.isAuth = false
             })
             .addCase(register.fulfilled, (state, action) => {
                 state.isAuth = true
-                state.token = action.payload.token
+                state.userId = action.payload
+            })
+            .addCase(logout.fulfilled, (state, action) => {
+                state.isAuth = false
+                state.userId = null
             })
     }
 })
